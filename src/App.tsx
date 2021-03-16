@@ -1,31 +1,54 @@
 import React from 'react';
-import logo from './logo.svg';
+import { BrowserRouter as Router, Switch, Route, Link } from 'react-router-dom';
 import './App.css';
 
-function App() {
-  let start = () => {
-    const electron = window.require('electron');
-    const ipcRenderer = electron.ipcRenderer;
-    console.log(123)
-    ipcRenderer.send('start');
-  }
+import Blog from './Blog';
+import About from './About';
+
+// function start(){
+//   const ipcRenderer = window.ipcRenderer;
+//   ipcRenderer.send('start');
+// }
+
+function Home(){
   return (
-    <div className="App">
-      <header className="App-header">
-        <img onClick={this.start} src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
+    <nav>
+      <ul>
+        <li>
+          <Link to="/home">Home</Link>
+        </li>
+        <li>
+          <Link to="/blog">Blog</Link>
+        </li>
+        <li>
+          <Link to="/about">About</Link>
+        </li>
+      </ul>
+    </nav>
+    )
+}
+
+function App() {
+  return (
+    <Router>
+      <header>
+        <Link to="/">Nekos</Link>
       </header>
-    </div>
+      <Switch>
+        <Route path="/blog">
+          <Blog />
+        </Route>
+        <Route path="/about">
+          <About />
+        </Route>
+        <Route path="/home">
+          <Home />
+        </Route>
+        <Route path="*">
+          <Home />
+        </Route>
+      </Switch>
+    </Router>
   );
 }
 

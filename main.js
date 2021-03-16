@@ -1,6 +1,7 @@
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
 const url = require('url');
+const ipc_main_connect = require('./ipc_main/index.js');
 
 let mainWindow = null;
 const debug = /--debug/.test(process.argv[2]);
@@ -18,15 +19,18 @@ function makeSingleInstance(){
 
 function createWindow() {
   const windowOptions = {
-    width: 400,
-    height: 300,
-    frame: true,
+    width: 800,
+    height: 600,
+    frame: false,
+    transparent: true,
     webPreferences: {
-      nodeIntegration: true,
+      devTools: false,
+      preload: path.join(__dirname, '/preload.js'),
     }
   };
 
   mainWindow = new BrowserWindow(windowOptions);
+
   if(debug){
     mainWindow.loadURL("http://localhost:3000/");
   }else{
@@ -36,20 +40,11 @@ function createWindow() {
       slashes:true 
     }))
   }
-  // 通信
-  const ipc = require("electron").ipcMain;
-  ipc.on('min', function() {
-    mainWindow.minimize();
-  });
-  ipc.on('max', function() {
-    mainWindow.maximize();
-  });
-  ipc.on('start', function() {
-    mainWindow.maximize();
-  });
-
+  
+  ipc_main_connect(mainWindow);
+  
+  mainWindow.webContents.openDevTools();
   if(debug){
-    mainWindow.webContents.openDevTools();
     // require('devtron').install();
   }
 
@@ -58,7 +53,7 @@ function createWindow() {
   });
 }
 
-makeSingleInstance();
+// makeSingleInstance();
 
 app.on('ready', function(event) {
   createWindow();
