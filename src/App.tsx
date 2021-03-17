@@ -29,6 +29,9 @@ function Home(){
 }
 
 function App() {
+  console.log(window.isElectron)
+  const ipcRenderer = window.ipcRenderer;
+  console.log(ipcRenderer)
   return (
     <Router>
       <header>

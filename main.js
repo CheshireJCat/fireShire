@@ -1,4 +1,4 @@
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const url = require('url');
 const ipc_main_connect = require('./ipc_main/index.js');
@@ -21,10 +21,10 @@ function createWindow() {
   const windowOptions = {
     width: 800,
     height: 600,
-    frame: false,
-    transparent: true,
+    frame: true,
+    // transparent: true,
     webPreferences: {
-      devTools: false,
+      devTools: true,
       preload: path.join(__dirname, '/preload.js'),
     }
   };
@@ -41,7 +41,7 @@ function createWindow() {
     }))
   }
   
-  ipc_main_connect(mainWindow);
+  ipc_main_connect(ipcMain, mainWindow);
   
   mainWindow.webContents.openDevTools();
   if(debug){
