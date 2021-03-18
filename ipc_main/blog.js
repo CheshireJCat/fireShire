@@ -1,8 +1,16 @@
+const { ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const listFileName = path.join('list.json');
+const listFileName = 'list.json';
+const debug = '--debug' === process.argv[1];
 
-function readFile(dir) {
+function blogPath(filename){
+  return path.join( debug ? './_blogs_dev/' : './blogs/', filename);
+}
+
+function readFile(filename) {
+  let dir = blogPath(filename);
+  console.log('blogs readFile',dir);
   return new Promise((resolve, reject) => {
     fs.readFile(dir, 'utf-8', (err, data) => {
       if (err) {
@@ -15,8 +23,10 @@ function readFile(dir) {
 }
 
 function writeFile(filename, content) {
+  let dir = blogPath(filename);
+  console.log('blogs readFile',dir);
   return new Promise((resolve, reject) => {
-    fs.writeFile(path.join(filename), content, (err, data) => {
+    fs.writeFile(dir, content, (err, data) => {
       if (err) {
         reject(console.log(err))
       }
@@ -26,16 +36,20 @@ function writeFile(filename, content) {
 }
 
 function existFile(filename){
+  let dir = blogPath(filename);
+  console.log('blogs existFile',dir);
   return new Promise((resolve) => {
-    fs.exists(filename, (exist) => {
+    fs.exists(dir, (exist) => {
       resolve(exist);
     })
   });
 }
 
 function removeFile(filename){
+  let dir = blogPath(filename);
+  console.log('blogs removeFile',dir);
   return new Promise((resolve,reject)=>{
-      fs.unlink(filename,(err)=>{
+      fs.unlink(dir,(err)=>{
           if(err){
               reject(console.log(err))
           }
@@ -122,11 +136,26 @@ async function deleteBlog(uuid) {
   await writeFile(listFileName, JSON.stringify(list));
   await removeMarkdown(uuid);
 }
+
 const createBlog = updateBlog;
 
-// createBlog({uuid:123},'234');
-// getBlogList().then(res=>{console.log(res);})
-// getMarkdown(123).then(res=>{console.log(res);})
+function init(){
+  ipcMain.on('blog-list', function(event,uuid){
+    getBlogList();
+  });
+
+  ipcMain.on('blog-create', function(event,data,content){
+    createBlog(data,content);
+  });
+
+  ipcMain.on('blog-edit', function(event,data,content){
+    updateBlog(data,content);
+  });
+
+  ipcMain.on('blog-del', function(event,uuid){
+    deleteBlog(uuid);
+  });
+}
 
 module.exports = {
   getBlogList,
@@ -134,4 +163,5 @@ module.exports = {
   updateBlog,
   createBlog,
   deleteBlog,
+  init
 }

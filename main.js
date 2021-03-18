@@ -6,6 +6,34 @@ const ipc_main_connect = require('./ipc_main/index.js');
 let mainWindow = null;
 const debug = /--debug/.test(process.argv[2]);
 
+// 热加载
+if(debug){
+  try {
+    require('electron-reloader')(module,{});
+  } catch (_) {}
+}
+
+// makeSingleInstance();
+start();
+
+function start(){
+  app.on('ready', function(event) {
+    createWindow();
+  });
+
+  app.on('window-all-closed', () => {
+    if(process.platform !== 'darwin'){
+      app.quit();
+    }
+  });
+
+  app.on('activate', () => {
+    if(mainWindow === null){
+      createWindow();
+    }
+  });
+}
+
 function makeSingleInstance(){
   if(process.mas) return;
   app.requestSingleInstanceLock();
@@ -41,7 +69,7 @@ function createWindow() {
     }))
   }
   
-  ipc_main_connect(ipcMain, mainWindow);
+  ipc_main_connect(mainWindow);
   
   mainWindow.webContents.openDevTools();
   if(debug){
@@ -52,23 +80,5 @@ function createWindow() {
     mainWindow = null;
   });
 }
-
-// makeSingleInstance();
-
-app.on('ready', function(event) {
-  createWindow();
-});
-
-app.on('window-all-closed', () => {
-  if(process.platform !== 'darwin'){
-    app.quit();
-  }
-});
-
-app.on('activate', () => {
-  if(mainWindow === null){
-    createWindow();
-  }
-});
 
 module.exports = mainWindow;
