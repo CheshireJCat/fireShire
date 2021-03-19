@@ -53,6 +53,8 @@ function createWindow() {
     // transparent: true,
     webPreferences: {
       devTools: true,
+      // nodeIntegration: true,
+      // contextIsolation: false,
       preload: path.join(__dirname, '/preload.js'),
     }
   };
