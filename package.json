@@ -27,9 +27,9 @@
   "scripts": {
     "start": "electron .",
     "dev": "react-scripts start | electron --debug .",
-    "devbuild": "electron --debug .",
-    "startWeb": "react-scripts start",
-    "buildWeb": "react-scripts build",
+    "deve": "electron --debug .",
+    "web": "react-scripts start",
+    "build": "react-scripts build",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },

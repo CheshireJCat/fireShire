@@ -4,12 +4,12 @@ const url = require('url');
 const ipc_main_connect = require('./ipc_main/index.js');
 
 let mainWindow = null;
-const debug = /--debug/.test(process.argv[2]);
+const debug = /--debug/.test(process.argv[1]);
 
 // 热加载
 if(debug){
   try {
-    require('electron-reloader')(module,{});
+    // require('electron-reloader')(module,{});
   } catch (_) {}
 }
 

@@ -1,4 +1,11 @@
+
 declare interface Window {
-  ipcRenderer: any;
-  isElectron: Boolean;
+  ipcRenderer: IpcRenderer;
+  isElectron: boolean;
+}
+
+declare interface SuccessRes {
+  code: number;
+  msg: string;
+  data?: any;
 }
