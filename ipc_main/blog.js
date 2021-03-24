@@ -28,7 +28,7 @@ function readFile(filename) {
 
 function writeFile(filename, content) {
   let dir = blogPath(filename);
-  console.log("blogs readFile", dir);
+  console.log("blogs writeFile", dir);
   return new Promise((resolve, reject) => {
     try {
       fs.writeFile(dir, content, (err, data) => {
@@ -37,7 +37,7 @@ function writeFile(filename, content) {
         }
         resolve(content);
       });
-    } catch(err) {
+    } catch (err) {
       reject(err);
     }
   });
@@ -48,6 +48,7 @@ function existFile(filename) {
   console.log("blogs existFile", dir);
   return new Promise((resolve) => {
     fs.exists(dir, (exist) => {
+      console.log("blogs existFile", dir, "-", exist);
       resolve(exist);
     });
   });
@@ -101,40 +102,79 @@ function removeItem(list, uuid) {
   return list;
 }
 
+function resErr(err) {
+  return {
+    code: err.code || -1,
+    msg: err.toString(),
+    data: [],
+  };
+}
+
 async function getBlogList() {
-  let list = await getFile(listFileName, "[]");
-  if (typeof list == "string") {
-    list = JSON.parse(list);
+  try {
+    let list = await getFile(listFileName, "[]");
+    if (typeof list == "string") {
+      list = JSON.parse(list);
+    }
+    return {
+      code: 0,
+      msg: "success",
+      data: list,
+    };
+  } catch (err) {
+    return resErr(err);
   }
-  return list;
 }
 
 async function getMarkdown(uuid) {
-  return await getFile(uuid + ".md", "[]");
+  try {
+    return {
+      code: 0,
+      msg: "success",
+      data: await getFile(uuid + ".md", "[]"),
+    };
+  } catch (err) {
+    return resErr(err);
+  }
 }
 
 async function removeMarkdown(uuid) {
-  let filename = uuid + ".md";
-  let exist = await existFile(filename);
-  if (exist) {
-    await removeFile(filename);
+  try {
+    let filename = uuid + ".md";
+    let exist = await existFile(filename);
+    if (exist) {
+      await removeFile(filename);
+    }
+    return {
+      code: 0,
+      msg: "success",
+    };
+  } catch (err) {
+    return resErr(err);
   }
-  return "删除成功";
 }
 
 async function updateMarkdown(uuid, content) {
-  let filename = uuid + ".md";
-  let exist = await existFile(filename);
-  if (!exist) {
-    await getFile(filename, "");
+  try {
+    let filename = uuid + ".md";
+    let exist = await existFile(filename);
+    if (!exist) {
+      await getFile(filename, "");
+    }
+    await writeFile(filename, content);
+    return {
+      code: 0,
+      msg: "success",
+    };
+  } catch (err) {
+    return resErr(err);
   }
-  await writeFile(filename, content);
 }
 
 async function updateBlog(data, content) {
   let { uuid } = data;
   try {
-    let list = await getBlogList();
+    let {data:list} = await getBlogList();
     list = updateList(list, data);
     await writeFile(listFileName, JSON.stringify(list));
     await updateMarkdown(uuid, content);
@@ -143,31 +183,38 @@ async function updateBlog(data, content) {
       msg: "success",
     };
   } catch (err) {
-    return {
-      code: -1,
-      msg: err.toString(),
-    };
+    return resErr(err);
   }
 }
 
 async function deleteBlog(uuid) {
-  let list = await getBlogList();
-  list = removeItem(list, uuid);
-  await writeFile(listFileName, JSON.stringify(list));
-  await removeMarkdown(uuid);
+  try {
+    let {data:list} = await getBlogList();
+    list = removeItem(list, uuid);
+    await writeFile(listFileName, JSON.stringify(list));
+    await removeMarkdown(uuid);
+    return {
+      code: 0,
+      msg: "success",
+    };
+  } catch (err) {
+    return resErr(err);
+  }
 }
 
 const createBlog = updateBlog;
 
 function init() {
-  ipcMain.handle("blog-list", function (event, uuid) {
-    getBlogList();
+  ipcMain.handle("blog-list", async function (event) {
+    const res = await getBlogList();
+    console.log("blog-list:", res);
+    return res;
   });
 
   ipcMain.handle("blog-create", async (event, data, content) => {
-    const success = await createBlog(data, content);
-    console.log(success);
-    return success;
+    const res = await createBlog(data, content);
+    console.log("blog-create:", res);
+    return res;
   });
 
   ipcMain.handle("blog-edit", function (event, data, content) {

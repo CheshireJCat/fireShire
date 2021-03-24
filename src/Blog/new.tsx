@@ -1,19 +1,8 @@
 import React, { useState, useEffect, useReducer } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { default as marked } from "marked";
-import { ShowTip } from "../utils";
-
-const isElectron: boolean = window.isElectron;
-const ipcRenderer = window.ipcRenderer;
-
-type FormData = {
-  uuid: string;
-  title: string;
-  tags: string[];
-  category: number;
-  public: boolean;
-  complete: boolean;
-};
+import { Toast } from "../utils";
+import { useHistory } from "react-router-dom";
 
 type Action =
   | { type: "SET_title"; payload: string }
@@ -24,7 +13,22 @@ type Action =
 
 type Categories = { id: number; name: string }[];
 
-const uuid = uuidv4();
+type FormData = {
+  uuid: string;
+  title: string;
+  tags: string[];
+  category: number;
+  public: boolean;
+  complete: boolean;
+};
+
+let uuid = uuidv4();
+function updateUuid(){
+  uuid = uuidv4();
+}
+const isElectron: boolean = window.isElectron;
+const ipcRenderer = window.ipcRenderer;
+const { showToast } = Toast;
 
 function getCategories(): Categories {
   return [
@@ -106,11 +110,50 @@ function preview(content: string): { __html: string } {
   return { __html: marked(content) };
 }
 
+function submit(formData: FormData, content: string, history: any) {
+  if (!isElectron) {
+    showToast({
+      msg: "当前环境是网页端，暂无法保存",
+    });
+    return;
+  }
+  createBlog(formData, content, history);
+}
+
+async function createBlog(formData: FormData, content: string, history: any) {
+  if(!formData.title){
+    showToast({
+      msg: '标题不能为空'
+    });
+    return;
+  }
+  let { code, msg } = await ipcRenderer.invoke(
+    "blog-create",
+    formData,
+    content
+  );
+  if (code === 0) {
+    showToast({
+      msg: "保存成功",
+      onHide() {
+        history.replace("/blog");
+        // window.location.href = '/blog'
+      },
+    });
+  } else {
+    showToast({
+      msg,
+      autoHide: false,
+    });
+  }
+}
+
 const BlogNew: React.FC = () => {
   const [tempSaveTime, setTempSaveTime] = useState<number>(
     new Date().getTime()
   );
   const [content, setContent] = useState<string>("");
+  const history = useHistory();
   const [formData, dispatch] = useReducer(reducer, {
     uuid,
     title: "",
@@ -126,26 +169,10 @@ const BlogNew: React.FC = () => {
       // submit(formData)
       setTempSaveTime(now);
     }
-  }, [tempSaveTime]);
-  const [tip, setTip] = useState({msg:'',autoHide:false});
-
-  async function createBlog(formData: FormData, content: string) {
-    let { code, msg } = await ipcRenderer.invoke("blog-create", formData, content);
-    if (code === 0) {
-      setTip({msg:'保存成功',autoHide:true});
-    } else {
-      setTip({msg,autoHide:false});
+    return () => {
+      updateUuid();
     }
-  }
-
-  function submit(formData: FormData, content: string) {
-    if (!isElectron)
-      return {
-        code: -1,
-        msg: "当前环境是网页端，无法保存",
-      };
-      createBlog(formData,content);
-  }
+  }, [tempSaveTime]);
 
   return (
     <div>
@@ -193,7 +220,10 @@ const BlogNew: React.FC = () => {
           ></textarea>
         </div>
         <div className="buttons">
-          <button type="button" onClick={() => submit(formData, content)}>
+          <button
+            type="button"
+            onClick={() => submit(formData, content, history)}
+          >
             保存
           </button>
           <label>
@@ -214,7 +244,6 @@ const BlogNew: React.FC = () => {
         {JSON.stringify(formData)}
         <div dangerouslySetInnerHTML={preview(content)}></div>
       </form>
-      {tip.msg && <ShowTip msg={tip.msg} onHide={()=>setTip({msg:'',autoHide:true})} autoHide={tip.autoHide}></ShowTip>}
     </div>
   );
 };

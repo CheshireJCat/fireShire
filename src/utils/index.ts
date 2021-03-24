@@ -1,5 +1,5 @@
-import ShowTip from './showTip'
+import * as Toast from './Toast'
 
 export {
-    ShowTip
+    Toast
 }
