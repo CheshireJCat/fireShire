@@ -1,6 +1,8 @@
 const { ipcMain } = require("electron");
 const path = require("path");
 const fs = require("fs");
+const uuid = require("uuid");
+
 const listFileName = "list.json";
 const debug = "--debug" === process.argv[1];
 
@@ -126,6 +128,29 @@ async function getBlogList() {
   }
 }
 
+async function getBlogDetailData(uuid) {
+  try {
+    let list = await getFile(listFileName, "[]");
+    if (typeof list == "string") {
+      list = JSON.parse(list);
+    }
+    let data = null;
+    for (let index = 0; index < list.length; index++) {
+      if(list[index].uuid === uuid){
+        data = list[index];
+        break;
+      }
+    }
+    return {
+      code: !data ? -1 : 0,
+      msg: !data ? "无数据" : "success",
+      data: data
+    };
+  } catch (err) {
+    return resErr(err);
+  }
+}
+
 async function getMarkdown(uuid) {
   try {
     return {
@@ -212,17 +237,32 @@ function init() {
   });
 
   ipcMain.handle("blog-create", async (event, data, content) => {
+    data.uuid = uuid.v4();
+    data.createTime = data.updateTime = new Date().getTime();
     const res = await createBlog(data, content);
     console.log("blog-create:", res);
     return res;
   });
 
   ipcMain.handle("blog-edit", function (event, data, content) {
+    data.updateTime = new Date().getTime();
     updateBlog(data, content);
   });
 
   ipcMain.handle("blog-del", function (event, uuid) {
     deleteBlog(uuid);
+  });
+
+  ipcMain.handle("blog-detailContent", async (event, uuid) => {
+    const res = await getMarkdown(uuid);
+    console.log("blog-content:", res);
+    return res;
+  });
+
+  ipcMain.handle("blog-detailData", async (event, uuid) => {
+    const res = await getBlogDetailData(uuid);
+    console.log("blog-content:", res);
+    return res;
   });
 }
 

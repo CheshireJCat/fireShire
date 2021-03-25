@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useReducer } from "react";
-import { v4 as uuidv4 } from "uuid";
 import { default as marked } from "marked";
 import { Toast } from "../utils";
+import { categories } from "../config";
 import { useHistory } from "react-router-dom";
 
 type Action =
@@ -11,10 +11,7 @@ type Action =
   | { type: "SET_public"; payload: boolean }
   | { type: "SET_complete"; payload: boolean };
 
-type Categories = { id: number; name: string }[];
-
 type FormData = {
-  uuid: string;
   title: string;
   tags: string[];
   category: number;
@@ -22,34 +19,9 @@ type FormData = {
   complete: boolean;
 };
 
-let uuid = uuidv4();
-function updateUuid(){
-  uuid = uuidv4();
-}
 const isElectron: boolean = window.isElectron;
 const ipcRenderer = window.ipcRenderer;
 const { showToast } = Toast;
-
-function getCategories(): Categories {
-  return [
-    {
-      id: 0,
-      name: "未分类",
-    },
-    {
-      id: 1,
-      name: "life",
-    },
-    {
-      id: 2,
-      name: "code",
-    },
-    {
-      id: 3,
-      name: "game",
-    },
-  ];
-}
 
 const Input: React.FC<{
   value: string;
@@ -71,14 +43,13 @@ const CategorySel: React.FC<{ value: number; change(value: number): void }> = ({
   value,
   change,
 }) => {
-  let data = getCategories();
   return (
     <select
       name="category"
       value={value}
       onChange={(event) => change(parseInt(event.target.value))}
     >
-      {data.map(({ id, name }) => {
+      {categories.map(({ id, name }) => {
         return (
           <option value={id} key={id}>
             {name}
@@ -121,9 +92,9 @@ function submit(formData: FormData, content: string, history: any) {
 }
 
 async function createBlog(formData: FormData, content: string, history: any) {
-  if(!formData.title){
+  if (!formData.title) {
     showToast({
-      msg: '标题不能为空'
+      msg: "标题不能为空",
     });
     return;
   }
@@ -149,13 +120,12 @@ async function createBlog(formData: FormData, content: string, history: any) {
 }
 
 const BlogNew: React.FC = () => {
+  const history = useHistory();
   const [tempSaveTime, setTempSaveTime] = useState<number>(
     new Date().getTime()
   );
   const [content, setContent] = useState<string>("");
-  const history = useHistory();
   const [formData, dispatch] = useReducer(reducer, {
-    uuid,
     title: "",
     tags: [],
     category: 0,
@@ -169,15 +139,11 @@ const BlogNew: React.FC = () => {
       // submit(formData)
       setTempSaveTime(now);
     }
-    return () => {
-      updateUuid();
-    }
   }, [tempSaveTime]);
 
   return (
     <div>
       <form>
-        <div>uuid:{uuid}</div>
         <div>
           <Input
             value={formData.title}

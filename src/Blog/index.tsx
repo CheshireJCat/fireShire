@@ -1,6 +1,7 @@
 import { useEffect, useReducer } from "react";
 import { HashRouter as Router, Switch, Route, Link } from "react-router-dom";
 import BlogNew from "./new";
+import Detail from "./detail";
 import { Toast } from "../utils";
 
 const isElectron: boolean = window.isElectron;
@@ -93,7 +94,10 @@ const BlogList: React.FC = () => {
           {state.data.map((item) => {
             return (
               <div key={item.uuid}>
-                <Link to="/blog/c">
+                <Link to={{
+                  pathname: `/blog/${item.uuid}`,
+                  state: item
+                }}>
                   {item.title}
                 </Link>
               </div>
@@ -120,6 +124,9 @@ export default function Blog() {
       <Switch>
         <Route path="/blog/new">
           <BlogNew />
+        </Route>
+        <Route path="/blog/:uuid">
+          <Detail />
         </Route>
         <Route path="/blog">
           <BlogList />
